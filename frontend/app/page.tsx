@@ -202,25 +202,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Stats Summary */}
-        {!loading && !error && weatherData.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 uppercase">Total Records</h3>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{weatherData.length}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 uppercase">Latest Update</h3>
-              <p className="text-lg font-semibold text-gray-900 mt-2">
-                {weatherData[0] ? formatDateTime(weatherData[0].created_at) : 'N/A'}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-sm font-medium text-gray-500 uppercase">Data Source</h3>
-              <p className="text-lg font-semibold text-gray-900 mt-2">Weather News JP</p>
-            </div>
-          </div>
-        )}
       </main>
 
     </div>
