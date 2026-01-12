@@ -223,12 +223,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-gray-400 py-4 mt-8">
-        <div className="container mx-auto px-4 text-center text-sm">
-          <p>Saitama Weather Dashboard - University Assignment</p>
-        </div>
-      </footer>
     </div>
   )
 }
