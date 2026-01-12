@@ -49,10 +49,11 @@ def scrape_weather_data() -> dict:
     temperature = "N/A"
     wind = "N/A"
     precipitation = "0"
+    observation_time = None
 
-    # Get current hour for reference
-    current_hour = datetime.now().hour
-    print(f"Current hour: {current_hour}")
+    # Get current date for constructing timestamp
+    today = datetime.now()
+    print(f"Current date: {today.strftime('%Y-%m-%d')}")
 
     # Find the current observation section using class names
     # The observation section uses classes: observedValue, obs_block, obs_content
@@ -64,7 +65,16 @@ def scrape_weather_data() -> dict:
         obs_text = obs_section.get_text()
         print(f"Found observation section")
 
-        # Extract temperature - look for number before "℃" or "°"
+        # Extract observation time - look for pattern like "22:40時点"
+        time_match = re.search(r'(\d{1,2}):(\d{2})\s*時点', obs_text)
+        if time_match:
+            obs_hour = int(time_match.group(1))
+            obs_minute = int(time_match.group(2))
+            # Construct datetime with observation time
+            observation_time = today.replace(hour=obs_hour, minute=obs_minute, second=0, microsecond=0)
+            print(f"Found observation time: {obs_hour}:{obs_minute:02d}")
+
+        # Extract temperature - look for number after "気温"
         # The structure is: 気温 1.6 ℃
         temp_match = re.search(r'気温[^\d]*(-?\d+\.?\d*)', obs_text)
         if temp_match:
@@ -113,10 +123,14 @@ def scrape_weather_data() -> dict:
         precipitation = precip_matches[0]
         print(f"Found precipitation: {precipitation}")
 
-    # Get current timestamp
-    timestamp = datetime.now().isoformat()
+    # Use observation time if found, otherwise use current time
+    if observation_time:
+        timestamp = observation_time.isoformat()
+    else:
+        timestamp = datetime.now().isoformat()
 
     print(f"Final values - Temp: {temperature}, Wind: {wind}, Precip: {precipitation}")
+    print(f"Observation timestamp: {timestamp}")
 
     return {
         "temperature": temperature,
