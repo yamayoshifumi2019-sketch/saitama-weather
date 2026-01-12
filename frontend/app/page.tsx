@@ -70,16 +70,17 @@ export default function Home() {
     setFilteredData(filtered)
   }, [searchTerm, weatherData])
 
-  // Format datetime for display
+  // Format datetime for display (without timezone conversion)
   function formatDateTime(isoString: string): string {
-    const date = new Date(isoString)
-    return date.toLocaleString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    // Parse the ISO string directly without timezone conversion
+    // Input format: "2026-01-12T22:40:00+00:00" or "2026-01-12 22:40:00+00"
+    const match = isoString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+    if (match) {
+      const [, year, month, day, hour, minute] = match
+      return `${year}/${month}/${day} ${hour}:${minute}`
+    }
+    // Fallback if pattern doesn't match
+    return isoString
   }
 
   return (
