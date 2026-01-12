@@ -126,6 +126,13 @@ def scrape_weather_data() -> dict:
     }
 
 
+def check_duplicate(timestamp: str) -> bool:
+    """Check if data with the same observation time already exists"""
+    supabase = get_supabase_client()
+    result = supabase.table("weather_saitama").select("id").eq("created_at", timestamp).execute()
+    return len(result.data) > 0
+
+
 def insert_weather_data(data: dict) -> dict:
     """Insert weather data into Supabase table 'weather_saitama'"""
     supabase = get_supabase_client()
@@ -166,10 +173,14 @@ def main():
             if not supabase_url or not supabase_key:
                 print("\nWarning: Supabase credentials not set. Skipping database insert.")
             else:
-                # Insert into Supabase
-                result = insert_weather_data(weather_data)
-                jst_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                print(f"\nData successfully saved to Supabase at {jst_timestamp} (JST)")
+                # Check for duplicate before inserting
+                if check_duplicate(weather_data["created_at"]):
+                    print(f"\nData for {weather_data['created_at']} already exists. Skipping insert.")
+                else:
+                    # Insert into Supabase
+                    result = insert_weather_data(weather_data)
+                    jst_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    print(f"\nData successfully saved to Supabase at {jst_timestamp} (JST)")
 
             print(f"\nWaiting for 10 minutes before next update...")
             print("-" * 60)
