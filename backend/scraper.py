@@ -75,7 +75,8 @@ def scrape_weather_data() -> dict:
             observation_time = today.replace(hour=obs_hour, minute=obs_minute, second=0, microsecond=0)
 
         # Extract temperature - look for number after "気温"
-        temp_match = re.search(r'気温[^\d]*(-?\d+\.?\d*)', obs_text)
+        # Use [^\d-]* to not consume the minus sign for negative temperatures
+        temp_match = re.search(r'気温[^\d-]*(-?\d+\.?\d*)', obs_text)
         if temp_match:
             temperature = temp_match.group(1)
         else:
