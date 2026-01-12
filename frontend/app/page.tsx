@@ -1,5 +1,20 @@
+'use client'
+
 import { useEffect, useState } from 'react'
-import { supabase, WeatherData } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+interface WeatherData {
+  id?: number
+  temperature: string
+  wind: string
+  precipitation: string
+  created_at: string
+}
 
 export default function Home() {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([])
@@ -164,17 +179,17 @@ export default function Home() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                            {item.temperature}
+                            {item.temperature}°C
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {item.wind}
+                            {item.wind} m/s
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            {item.precipitation}
+                            {item.precipitation} mm
                           </span>
                         </td>
                       </tr>
