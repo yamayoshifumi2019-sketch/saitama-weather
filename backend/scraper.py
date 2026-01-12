@@ -1,10 +1,12 @@
 """
 Weather Data Scraper for Saitama
 Scrapes current weather observation from weathernews.jp and stores it in Supabase
+Runs continuously with 10-minute intervals
 """
 
 import os
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
@@ -12,6 +14,9 @@ from datetime import datetime
 
 # Weather data URL
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
+
+# Interval between scrapes (in seconds)
+SCRAPE_INTERVAL = 600  # 10 minutes
 
 
 def get_supabase_client() -> Client:
@@ -157,11 +162,12 @@ def insert_weather_data(data: dict) -> dict:
     return result.data
 
 
-def main():
-    """Main function to scrape and store weather data"""
-    print("Starting weather data scrape...")
+def run_scraper_once():
+    """Run the scraper once and return success status"""
+    print("\n" + "=" * 50)
+    print(f"Starting weather data scrape...")
     print(f"Fetching data from: {WEATHER_URL}")
-    print(f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # Scrape weather data
     weather_data = scrape_weather_data()
@@ -173,16 +179,50 @@ def main():
     if not supabase_url or not supabase_key:
         print("\nWarning: Supabase credentials not set. Skipping database insert.")
         print("Set SUPABASE_URL and SUPABASE_KEY environment variables to enable database storage.")
-        return weather_data
+        return False
 
     # Insert into Supabase
     try:
         result = insert_weather_data(weather_data)
         print(f"Data inserted successfully: {result}")
+        return True
     except Exception as e:
         print(f"Error inserting data: {e}")
+        return False
 
-    return weather_data
+
+def main():
+    """Main function to run scraper continuously with 10-minute intervals"""
+    print("=" * 50)
+    print("Saitama Weather Scraper - Continuous Mode")
+    print(f"Scraping interval: {SCRAPE_INTERVAL // 60} minutes")
+    print("Press Ctrl+C to stop")
+    print("=" * 50)
+
+    while True:
+        try:
+            # Run the scraper
+            success = run_scraper_once()
+
+            # Print status message
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            if success:
+                print(f"\nData saved at {current_time}. Waiting for 10 minutes...")
+            else:
+                print(f"\nScrape completed at {current_time} (no data saved). Waiting for 10 minutes...")
+
+            print("=" * 50)
+
+            # Wait for 10 minutes before next scrape
+            time.sleep(SCRAPE_INTERVAL)
+
+        except KeyboardInterrupt:
+            print("\n\nScraper stopped by user.")
+            break
+        except Exception as e:
+            print(f"\nError occurred: {e}")
+            print(f"Retrying in 10 minutes...")
+            time.sleep(SCRAPE_INTERVAL)
 
 
 if __name__ == "__main__":
