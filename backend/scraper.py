@@ -10,7 +10,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Weather data URL
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
@@ -77,6 +77,10 @@ def scrape_weather_data() -> dict:
             obs_minute = int(time_match.group(2))
             # Construct datetime with observation time (JST)
             observation_time = today.replace(hour=obs_hour, minute=obs_minute, second=0, microsecond=0)
+            # If observation hour is much greater than current hour, it's from yesterday
+            # e.g., observation is 23:40 but current time is 00:05
+            if obs_hour > today.hour + 12:
+                observation_time = observation_time - timedelta(days=1)
 
         # Extract temperature - look for number after "気温"
         # Use [^\d-]* to not consume the minus sign for negative temperatures
