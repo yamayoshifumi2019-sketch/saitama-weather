@@ -66,6 +66,10 @@ def scrape_weather_data() -> dict:
     if obs_section:
         obs_text = obs_section.get_text()
 
+        # Normalize minus signs: replace Unicode minus (U+2212), en-dash (U+2013),
+        # fullwidth minus (U+FF0D) with regular hyphen-minus (U+002D)
+        obs_text = obs_text.replace('\u2212', '-').replace('\u2013', '-').replace('\uff0d', '-')
+
         # Extract observation time - look for pattern like "22:40時点" (JST)
         time_match = re.search(r'(\d{1,2}):(\d{2})\s*時点', obs_text)
         if time_match:
@@ -95,6 +99,8 @@ def scrape_weather_data() -> dict:
         obs_blocks = soup.find_all(class_='obs_block')
         for block in obs_blocks:
             block_text = block.get_text()
+            # Normalize minus signs
+            block_text = block_text.replace('\u2212', '-').replace('\u2013', '-').replace('\uff0d', '-')
 
             if '気温' in block_text:
                 temp_match = re.search(r'(-?\d+\.?\d*)', block_text)
