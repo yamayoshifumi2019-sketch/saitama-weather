@@ -114,7 +114,7 @@ export default function Home() {
         )}
 
         {/* Data Table */}
-        {!loading && !error && activeCategory && (
+        {!loading && !error && (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -124,14 +124,20 @@ export default function Home() {
                       Date/Time
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {activeCategory === 'TEMP' ? 'Temp' : activeCategory === 'WIND' ? 'Wind' : 'Rain'}
+                      Temp
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Wind
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Rain
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredData.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                         No weather data available
                       </td>
                     </tr>
@@ -145,21 +151,19 @@ export default function Home() {
                           {formatDateTime(item.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {activeCategory === 'TEMP' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                              {item.temperature}°C
-                            </span>
-                          )}
-                          {activeCategory === 'WIND' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                              {item.wind} m/s
-                            </span>
-                          )}
-                          {activeCategory === 'RAIN' && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                              {item.precipitation} mm
-                            </span>
-                          )}
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                            {item.temperature}°C
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {item.wind} m/s
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            {item.precipitation} mm
+                          </span>
                         </td>
                       </tr>
                     ))
