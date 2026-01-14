@@ -85,7 +85,7 @@ export default function Home() {
             {(['TEMP', 'WIND', 'RAIN'] as const).map((category) => (
               <button
                 key={category}
-                onClick={() => setActiveCategory(category)}
+                onClick={() => setActiveCategory(activeCategory === category ? null : category)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeCategory === category
                     ? 'bg-blue-600 text-white'
@@ -123,15 +123,21 @@ export default function Home() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Date/Time
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Temp
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Wind
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Rain
-                    </th>
+                    {(activeCategory === null || activeCategory === 'TEMP') && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Temp
+                      </th>
+                    )}
+                    {(activeCategory === null || activeCategory === 'WIND') && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Wind
+                      </th>
+                    )}
+                    {(activeCategory === null || activeCategory === 'RAIN') && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Rain
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -150,21 +156,27 @@ export default function Home() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatDateTime(item.created_at)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                            {item.temperature}°C
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {item.wind} m/s
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            {item.precipitation} mm
-                          </span>
-                        </td>
+                        {(activeCategory === null || activeCategory === 'TEMP') && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                              {item.temperature}°C
+                            </span>
+                          </td>
+                        )}
+                        {(activeCategory === null || activeCategory === 'WIND') && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              {item.wind} m/s
+                            </span>
+                          </td>
+                        )}
+                        {(activeCategory === null || activeCategory === 'RAIN') && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              {item.precipitation} mm
+                            </span>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
