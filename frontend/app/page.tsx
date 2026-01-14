@@ -20,6 +20,7 @@ export default function Home() {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([])
   const [filteredData, setFilteredData] = useState<WeatherData[]>([])
   const [activeCategory, setActiveCategory] = useState<'TEMP' | 'WIND' | 'RAIN' | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,10 +50,20 @@ export default function Home() {
     fetchWeatherData()
   }, [])
 
-  // Show all data when a category button is clicked
+  // Filter data by date search term
   useEffect(() => {
-    setFilteredData(weatherData)
-  }, [activeCategory, weatherData])
+    if (!searchTerm.trim()) {
+      setFilteredData(weatherData)
+      return
+    }
+
+    const filtered = weatherData.filter((item) => {
+      const dateStr = formatDateTime(item.created_at)
+      return dateStr.includes(searchTerm)
+    })
+
+    setFilteredData(filtered)
+  }, [searchTerm, weatherData])
 
   // Format datetime for display (without timezone conversion)
   function formatDateTime(isoString: string): string {
@@ -79,23 +90,52 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Category Buttons */}
+        {/* Search and Category Buttons */}
         <div className="mb-6">
-          <div className="flex gap-2">
-            {(['TEMP', 'WIND', 'RAIN'] as const).map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(activeCategory === category ? null : category)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeCategory === category
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                }`}
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by date (e.g. 01/12)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full md:w-64 px-4 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {category}
-              </button>
-            ))}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex gap-2">
+              {(['TEMP', 'WIND', 'RAIN'] as const).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeCategory === category
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
+          {searchTerm && (
+            <p className="text-sm text-gray-600 mt-2">
+              Showing {filteredData.length} of {weatherData.length} records
+            </p>
+          )}
         </div>
 
         {/* Loading State */}
