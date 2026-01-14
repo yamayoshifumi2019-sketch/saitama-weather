@@ -19,8 +19,7 @@ interface WeatherData {
 export default function Home() {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([])
   const [filteredData, setFilteredData] = useState<WeatherData[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchCategory, setSearchCategory] = useState<'ALL' | 'DATE' | 'TEMP' | 'WIND' | 'RAIN'>('ALL')
+  const [activeCategory, setActiveCategory] = useState<'TEMP' | 'WIND' | 'RAIN' | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -50,39 +49,10 @@ export default function Home() {
     fetchWeatherData()
   }, [])
 
-  // Filter data based on search term and category
+  // Show all data when a category button is clicked
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredData(weatherData)
-      return
-    }
-
-    const lowercaseSearch = searchTerm.toLowerCase()
-    const filtered = weatherData.filter((item) => {
-      const dateStr = formatDateTime(item.created_at).toLowerCase()
-
-      switch (searchCategory) {
-        case 'DATE':
-          return dateStr.includes(lowercaseSearch)
-        case 'TEMP':
-          return item.temperature.toLowerCase().includes(lowercaseSearch)
-        case 'WIND':
-          return item.wind.toLowerCase().includes(lowercaseSearch)
-        case 'RAIN':
-          return item.precipitation.toLowerCase().includes(lowercaseSearch)
-        case 'ALL':
-        default:
-          return (
-            dateStr.includes(lowercaseSearch) ||
-            item.temperature.toLowerCase().includes(lowercaseSearch) ||
-            item.wind.toLowerCase().includes(lowercaseSearch) ||
-            item.precipitation.toLowerCase().includes(lowercaseSearch)
-          )
-      }
-    })
-
-    setFilteredData(filtered)
-  }, [searchTerm, searchCategory, weatherData])
+    setFilteredData(weatherData)
+  }, [activeCategory, weatherData])
 
   // Format datetime for display (without timezone conversion)
   function formatDateTime(isoString: string): string {
@@ -109,52 +79,23 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Search/Filter Bar */}
+        {/* Category Buttons */}
         <div className="mb-6">
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={`Search by ${searchCategory.toLowerCase()}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-64 px-4 py-2 pl-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <svg
-                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="flex gap-2">
+            {(['TEMP', 'WIND', 'RAIN'] as const).map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeCategory === category
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <div className="flex gap-2">
-              {(['ALL', 'DATE', 'TEMP', 'WIND', 'RAIN'] as const).map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSearchCategory(category)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    searchCategory === category
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+                {category}
+              </button>
+            ))}
           </div>
-          {searchTerm && (
-            <p className="text-sm text-gray-600 mt-2">
-              Showing {filteredData.length} of {weatherData.length} records
-            </p>
-          )}
         </div>
 
         {/* Loading State */}
