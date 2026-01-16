@@ -38,8 +38,13 @@ export default function Home() {
           throw error
         }
 
-        setWeatherData(data || [])
-        setFilteredData(data || [])
+        // Remove duplicates based on created_at timestamp
+        const uniqueData = (data || []).filter((item, index, self) =>
+          index === self.findIndex((t) => t.created_at === item.created_at)
+        )
+
+        setWeatherData(uniqueData)
+        setFilteredData(uniqueData)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data')
       } finally {
