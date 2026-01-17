@@ -80,17 +80,23 @@ export default function Home() {
     setFilteredData(filtered)
   }, [searchTerm, weatherData])
 
-  // Format datetime for display (without timezone conversion)
+  // Format datetime for display (convert UTC to JST)
   function formatDateTime(isoString: string): string {
-    // Parse the ISO string directly without timezone conversion
-    // Input format: "2026-01-12T22:40:00+00:00" or "2026-01-12 22:40:00+00"
-    const match = isoString.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
-    if (match) {
-      const [, year, month, day, hour, minute] = match
-      return `${year}/${month}/${day} ${hour}:${minute}`
+    // Parse the UTC timestamp and convert to JST (UTC+9)
+    const date = new Date(isoString)
+    // Format in JST timezone
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Tokyo'
     }
-    // Fallback if pattern doesn't match
-    return isoString
+    const formatted = date.toLocaleString('ja-JP', options)
+    // Convert from "2026/01/17 14:30" format
+    return formatted.replace(',', '')
   }
 
   return (
