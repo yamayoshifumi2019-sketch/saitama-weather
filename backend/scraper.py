@@ -10,7 +10,10 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+# Japan Standard Time (UTC+9)
+JST = timezone(timedelta(hours=9))
 
 # Weather data URL
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
@@ -56,8 +59,8 @@ def scrape_weather_data() -> dict:
     precipitation = "0"
     observation_time = None
 
-    # Get current date for constructing timestamp (JST)
-    today = datetime.now()
+    # Get current date/time in JST for constructing timestamp
+    today = datetime.now(JST)
 
     # Find the current observation section using class names
     # The observation section uses classes: observedValue, obs_block, obs_content
@@ -75,11 +78,14 @@ def scrape_weather_data() -> dict:
         if time_match:
             obs_hour = int(time_match.group(1))
             obs_minute = int(time_match.group(2))
-            # Construct datetime with observation time (JST)
+            # Construct datetime with observation time in JST
             observation_time = today.replace(hour=obs_hour, minute=obs_minute, second=0, microsecond=0)
             # If observation hour is much greater than current hour, it's from yesterday
-            # e.g., observation is 23:40 but current time is 00:05
+            # e.g., observation is 23:40 but current JST time is 00:05
             if obs_hour > today.hour + 12:
+                observation_time = observation_time - timedelta(days=1)
+            # If observation time is in the future (more than 30 min ahead), it's likely from yesterday
+            elif observation_time > today + timedelta(minutes=30):
                 observation_time = observation_time - timedelta(days=1)
 
         # Extract temperature - look for number after "気温"
@@ -122,11 +128,11 @@ def scrape_weather_data() -> dict:
     if precip_matches:
         precipitation = precip_matches[0]
 
-    # Use observation time (JST) if found, otherwise use current time
+    # Use observation time (JST) if found, otherwise use current JST time
     if observation_time:
         timestamp = observation_time.isoformat()
     else:
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(JST).isoformat()
 
     return {
         "temperature": temperature,
@@ -189,7 +195,7 @@ def main():
                 else:
                     # Insert into Supabase
                     result = insert_weather_data(weather_data)
-                    jst_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    jst_timestamp = datetime.now(JST).strftime('%Y-%m-%d %H:%M:%S')
                     print(f"\nData successfully saved to Supabase at {jst_timestamp} (JST)")
 
             print(f"\nWaiting for 10 minutes before next update...")

@@ -38,10 +38,20 @@ export default function Home() {
           throw error
         }
 
-        // Remove duplicates based on created_at timestamp
-        const uniqueData = (data || []).filter((item, index, self) =>
-          index === self.findIndex((t) => t.created_at === item.created_at)
-        )
+        // Remove duplicates based on normalized timestamp (minute precision)
+        // This handles cases where timestamps have slight variations (milliseconds, timezone formats)
+        const normalizeTimestamp = (ts: string): string => {
+          const match = ts.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/)
+          if (match) {
+            return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`
+          }
+          return ts
+        }
+
+        const uniqueData = (data || []).filter((item, index, self) => {
+          const normalizedTs = normalizeTimestamp(item.created_at)
+          return index === self.findIndex((t) => normalizeTimestamp(t.created_at) === normalizedTs)
+        })
 
         setWeatherData(uniqueData)
         setFilteredData(uniqueData)
