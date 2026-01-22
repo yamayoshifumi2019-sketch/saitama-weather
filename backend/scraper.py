@@ -15,14 +15,14 @@ for var in proxy_vars:
 import re
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client, Client
+from supabase import create_client
 from datetime import datetime, timedelta, timezone
 
 # 日本標準時 (JST)
 JST = timezone(timedelta(hours=9))
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
 
-def get_supabase_client() -> Client:
+def get_supabase_client():
     """Supabaseに接続する"""
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY")
@@ -99,6 +99,7 @@ def main():
     try:
         client = get_supabase_client()
 
+        # created_at が同じデータが存在する場合はスキップ
         query = (
             client.table("weather_saitama")
             .select("id")
