@@ -1,7 +1,6 @@
 """
 Weather Data Scraper for Saitama (GitHub Actions Version)
 Scrapes current weather observation and stores it in Supabase.
-Runs once and exits (scheduling is handled by GitHub Actions).
 """
 
 import os
@@ -18,11 +17,14 @@ JST = timezone(timedelta(hours=9))
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
 
 def get_supabase_client() -> Client:
-    """Create and return Supabase client"""
+    """Create and return Supabase client with minimal configuration to avoid proxy errors"""
     url = os.environ.get("SUPABASE_URL", "")
     key = os.environ.get("SUPABASE_KEY", "")
     if not url or not key:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+    
+    # 【最重要】URLとKEY以外の引数を一切渡さないことで、
+    # 依存ライブラリ(httpx)による内部エラーを回避します
     return create_client(url, key)
 
 def scrape_weather_data() -> dict:
@@ -76,13 +78,13 @@ def scrape_weather_data() -> dict:
     }
 
 def check_duplicate(timestamp: str) -> bool:
-    """Check if data already exists"""
+    """Check if data already exists in Supabase"""
     supabase = get_supabase_client()
     result = supabase.table("weather_saitama").select("id").eq("created_at", timestamp).execute()
     return len(result.data) > 0
 
 def insert_weather_data(data: dict):
-    """Insert into Supabase"""
+    """Insert weather data into Supabase"""
     supabase = get_supabase_client()
     supabase.table("weather_saitama").insert({
         "temperature": data["temperature"],
@@ -92,23 +94,26 @@ def insert_weather_data(data: dict):
     }).execute()
 
 def main():
-    """Execute scraping ONCE and exit"""
+    """Execute scraping once and exit"""
     print(f"Starting scrape at {datetime.now(JST).strftime('%Y-%m-%d %H:%M:%S')} (JST)")
     
     try:
+        # 1. スクレイピング実行
         weather_data = scrape_weather_data()
         print(f"Data found: {weather_data}")
 
-        # Supabaseへの保存
+        # 2. 重複チェックと保存
         if check_duplicate(weather_data["created_at"]):
-            print(f"Data for {weather_data['created_at']} already exists. Skipping.")
+            print(f"Data for {weather_data['created_at']} already exists. Skipping insert.")
         else:
             insert_weather_data(weather_data)
             print("Successfully saved to Supabase.")
             
     except Exception as e:
         print(f"Error occurred: {e}")
-        exit(1) # エラーがあった場合はGitHub Actionsに失敗を通知
+        # GitHub Actionsにエラーを通知
+        import sys
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
