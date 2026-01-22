@@ -17,14 +17,18 @@ JST = timezone(timedelta(hours=9))
 WEATHER_URL = "https://weathernews.jp/onebox/tenki/saitama/11100/"
 
 def get_supabase_client() -> Client:
-    """Create and return Supabase client with minimal configuration to avoid proxy errors"""
+    """Create and return Supabase client while disabling problematic proxy settings"""
     url = os.environ.get("SUPABASE_URL", "")
     key = os.environ.get("SUPABASE_KEY", "")
-    if not url or not key:
-        raise ValueError("SUPABASE_URL and SUPABASE_KEY environment variables must be set")
     
-    # 【最重要】URLとKEY以外の引数を一切渡さないことで、
-    # 依存ライブラリ(httpx)による内部エラーを回避します
+    # 【最重要】環境変数からプロキシ設定を完全に消去して、ライブラリの自爆を防ぎます
+    if "https_proxy" in os.environ: del os.environ["https_proxy"]
+    if "http_proxy" in os.environ: del os.environ["http_proxy"]
+    
+    if not url or not key:
+        raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set")
+    
+    # 最小限の構成でクライアントを作成
     return create_client(url, key)
 
 def scrape_weather_data() -> dict:
@@ -38,9 +42,7 @@ def scrape_weather_data() -> dict:
     
     soup = BeautifulSoup(response.text, "html.parser")
 
-    temperature = "N/A"
-    wind = "N/A"
-    precipitation = "0"
+    temperature, wind, precipitation = "N/A", "N/A", "0"
     observation_time = None
     today = datetime.now(JST)
 
@@ -48,7 +50,6 @@ def scrape_weather_data() -> dict:
     if obs_section:
         obs_text = obs_section.get_text().replace('\u2212', '-').replace('\u2013', '-').replace('\uff0d', '-')
         
-        # 観測時刻の抽出
         time_match = re.search(r'(\d{1,2}):(\d{2})\s*時点', obs_text)
         if time_match:
             obs_hour, obs_min = int(time_match.group(1)), int(time_match.group(2))
@@ -56,15 +57,12 @@ def scrape_weather_data() -> dict:
             if obs_hour > today.hour + 12 or observation_time > today + timedelta(minutes=30):
                 observation_time -= timedelta(days=1)
 
-        # 気温の抽出
         temp_match = re.search(r'気温[^\d-]*(-?\d+\.?\d*)', obs_text)
         if temp_match: temperature = temp_match.group(1)
 
-        # 風速の抽出
         wind_match = re.search(r'(\d+\.?\d*)\s*m/s', obs_text)
         if wind_match: wind = wind_match.group(1)
 
-    # 降水量の抽出
     precip_matches = re.compile(r'(\d+\.?\d*)\s*ミリ').findall(response.text)
     if precip_matches: precipitation = precip_matches[0]
 
@@ -77,41 +75,28 @@ def scrape_weather_data() -> dict:
         "created_at": timestamp
     }
 
-def check_duplicate(timestamp: str) -> bool:
-    """Check if data already exists in Supabase"""
-    supabase = get_supabase_client()
-    result = supabase.table("weather_saitama").select("id").eq("created_at", timestamp).execute()
-    return len(result.data) > 0
-
-def insert_weather_data(data: dict):
-    """Insert weather data into Supabase"""
-    supabase = get_supabase_client()
-    supabase.table("weather_saitama").insert({
-        "temperature": data["temperature"],
-        "wind": data["wind"],
-        "precipitation": data["precipitation"],
-        "created_at": data["created_at"]
-    }).execute()
-
 def main():
-    """Execute scraping once and exit"""
+    """Execute scraping and save to Supabase"""
     print(f"Starting scrape at {datetime.now(JST).strftime('%Y-%m-%d %H:%M:%S')} (JST)")
     
     try:
-        # 1. スクレイピング実行
         weather_data = scrape_weather_data()
         print(f"Data found: {weather_data}")
 
-        # 2. 重複チェックと保存
-        if check_duplicate(weather_data["created_at"]):
-            print(f"Data for {weather_data['created_at']} already exists. Skipping insert.")
+        supabase = get_supabase_client()
+        
+        # 重複チェック
+        exists = supabase.table("weather_saitama").select("id").eq("created_at", weather_data["created_at"]).execute()
+        
+        if len(exists.data) > 0:
+            print(f"Data for {weather_data['created_at']} already exists. Skipping.")
         else:
-            insert_weather_data(weather_data)
+            # 保存
+            supabase.table("weather_saitama").insert(weather_data).execute()
             print("Successfully saved to Supabase.")
             
     except Exception as e:
         print(f"Error occurred: {e}")
-        # GitHub Actionsにエラーを通知
         import sys
         sys.exit(1)
 
