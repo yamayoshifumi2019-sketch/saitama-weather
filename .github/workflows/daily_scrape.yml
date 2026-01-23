@@ -3,18 +3,18 @@ name: Saitama Weather Scraper
 on:
   push:
     branches:
-      - main  # 1. コードを更新して保存した瞬間に動きます
+      - main
   schedule:
-    - cron: '*/10 * * * *' # 2. 10分おきに自動で実行されます
-  workflow_dispatch:      # 3. 手動で動かすボタンも残します
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    # 前の実行が終わっていない場合に、古い方をキャンセルして最新を優先します
+    # 連続で実行された時に「エラー」として出さないよう、同時実行制御を少し緩めます
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false # ここを false にして、前の回も最後まで走らせるようにします
 
     steps:
       - name: Checkout code
