@@ -1,18 +1,17 @@
 name: Saitama Weather Scraper
 
 on:
-  schedule:
-    # 10分おきはGitHubに後回しにされやすいため、20分おきに変更して安定性を高めます
-    - cron: '*/20 * * * *'
-  workflow_dispatch: # 手動ボタンも残します
   push:
     branches:
-      - main # コードを変更した時にも動くようにして、GitHubに「活動中」だと知らせます
+      - main  # 1. コードを更新して保存した瞬間に動きます
+  schedule:
+    - cron: '*/10 * * * *' # 2. 10分おきに自動で実行されます
+  workflow_dispatch:      # 3. 手動で動かすボタンも残します
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    # 実行が遅延しても、前の回が残っていたらキャンセルして最新を優先します
+    # 前の実行が終わっていない場合に、古い方をキャンセルして最新を優先します
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
@@ -25,14 +24,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-          # キャッシュ機能を使うことで、インストール時間を短縮し、エラーを減らします
           cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # requirements.txt の内容に従ってインストール
-          pip install -r backend/requirements.txt
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
       - name: Run script
         env:
