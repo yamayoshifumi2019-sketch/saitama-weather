@@ -1,13 +1,22 @@
-name: 10min Scraper
+name: Saitama Weather Scraper
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # 10分おきに自動実行
-  workflow_dispatch: # 手動実行ボタンを表示
+    # 10分おきはGitHubに後回しにされやすいため、20分おきに変更して安定性を高めます
+    - cron: '*/20 * * * *'
+  workflow_dispatch: # 手動ボタンも残します
+  push:
+    branches:
+      - main # コードを変更した時にも動くようにして、GitHubに「活動中」だと知らせます
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    # 実行が遅延しても、前の回が残っていたらキャンセルして最新を優先します
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,18 +25,18 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+          # キャッシュ機能を使うことで、インストール時間を短縮し、エラーを減らします
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # --force-reinstall を使い、キャッシュを無視して正しいライブラリを入れ直します
-          pip install --force-reinstall -r backend/requirements.txt
+          # requirements.txt の内容に従ってインストール
+          pip install -r backend/requirements.txt
 
       - name: Run script
         env:
-          # GitHub Secretsから環境変数を読み込み
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          # pythonコマンドでスクリプトを実行
           python backend/scraper.py
