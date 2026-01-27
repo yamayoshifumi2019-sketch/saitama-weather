@@ -5,16 +5,17 @@ on:
     branches:
       - main
   schedule:
-    - cron: '*/10 * * * *'
+    # 日本時間 朝9時 (UTC 0:00) に実行されるように設定
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    # 連続で実行された時に「エラー」として出さないよう、同時実行制御を少し緩めます
+    # 実行間隔が広がるため、同時実行制御はデフォルトに近い設定でも安全です
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: false # ここを false にして、前の回も最後まで走らせるようにします
+      cancel-in-progress: false 
 
     steps:
       - name: Checkout code
